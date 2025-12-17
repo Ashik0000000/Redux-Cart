@@ -1,35 +1,101 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from "../components/Header";
 import { Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { getAllProducts } from '../redux/slices/productSlice';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBackward, faForward } from '@fortawesome/free-solid-svg-icons';
+
 
 function Home() {
+  const dispatch = useDispatch();
+  const { loading, allProducts, error } = useSelector(state => state.productReducer);
+  const[currentPage,setCurrentPage]= useState(1)
+  const productsPerPage=8
+  
+  const totalPages= Math.ceil(allProducts.length/productsPerPage)
+
+  
+  const pageItemLastIndex =  currentPage* productsPerPage
+  const pageItemStartIndex =  pageItemLastIndex - productsPerPage
+  const visibleProductArray = allProducts?.slice(pageItemStartIndex,pageItemLastIndex)
+
+
+  useEffect(() => {
+    dispatch(getAllProducts());
+  }, []);
+
+   const navigateNextPage=()=>{
+    if(currentPage!=totalPages){
+      setCurrentPage(currentPage+1)
+    }
+   }
+
+   const navigatePreviousPage=()=>{
+    if(currentPage!=1){
+      setCurrentPage(currentPage-1)
+    }
+   }
   return (
     <>
-      <Header />
+      <Header insideHome={true} />
 
       <div className="container py-5">
-        <div className="row my-5">
 
-          {/* duplicate */}
-          <div className="col-md-3 mb-2">
-            {/* card - react bootstrap */}
-            <Card>
-              <Card.Img
-                height="250px"
-                variant="top"
-                src="https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp"
+        {
+          loading ? (
+            <div className="text-center my-5">
+              <img
+                width="300px"
+                src="https://gifdb.com/images/thumbnail/loading-screen-498-x-373-gif-ebx09khayghc4sfq.gif"
+                alt="loading"
               />
-              <Card.Body className="text-center">
-                <Card.Title>Title</Card.Title>
-                <Link to="/products/id/view" className="btn btn-secondary">
-                  View More..
-                </Link>
-              </Card.Body>
-            </Card>
-          </div>
+            </div>
+          ) : (
+            <div className="row my-5">
+              {
+                allProducts?.length > 0 ? (
+                  visibleProductArray?.map(product => (
+                    <div key={product.id} className="col-md-3 mb-2">
+                      <Card>
+                        <Card.Img
+                          height={'250px'}
+                          variant="top"
+                          src={product.thumbnail}
+                        />
+                        <Card.Body className="text-center">
+                          <Card.Title>{product.title}</Card.Title>
 
-        </div>
+                          <Link
+                            to={`/products/${product.id}/view`}
+                            className="btn btn-secondary"
+                          >
+                            View More..
+                          </Link>
+
+                        </Card.Body>
+                      </Card>
+                    </div>
+                  ))
+                ) : (
+                  <p className="fs-5 fw-bold my-5 text-center">
+                    Product Not Found!!!
+                  </p>
+                )
+              }
+              <div className="my-3 text-center">
+                <button onClick={navigatePreviousPage} className="btn"><FontAwesomeIcon icon={faBackward}></FontAwesomeIcon></button>
+                <span className="fw-bolder">
+                  {currentPage} of {totalPages}
+                </span>
+                 <button onClick={navigateNextPage} className="btn"><FontAwesomeIcon icon={faForward}></FontAwesomeIcon></button>
+              </div>
+
+            </div>
+          )
+        }
+
       </div>
     </>
   );
